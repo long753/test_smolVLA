@@ -16,7 +16,8 @@ Success: 方块完整位于托盘内并稳定保持 2 秒。
 ├── src/
 │   └── smolvla_task/
 │       ├── controllers/
-│       │   ├── panda_ik_controller.py       # Panda 逆运动学控制
+│       │   ├── panda_ik_controller.py       # 带偏置力补偿的 Panda IK
+│       │   ├── panda_ik_controller_no_gravity.py  # 无补偿对照控制器
 │       │   └── scripted_expert.py           # 脚本专家策略
 │       ├── envs/
 │       │   ├── cube_tray_env.py             # MuJoCo 任务环境
@@ -29,6 +30,7 @@ Success: 方块完整位于托盘内并稳定保持 2 秒。
 │   ├── collect_data.py                      # 采集 LeRobotDataset
 │   ├── evaluate.py                          # 单模型闭环评估
 │   ├── compare_models.py                    # 50-seed 模型对比
+│   ├── compare_gravity_compensation.py      # 重力补偿运动精度对比
 │   └── test_scripted_pick.py                # 脚本专家 smoke
 │
 ├── models/ 
@@ -186,3 +188,29 @@ outputs/evaluation/smolvla_base_vs_finetuned_seeds_100_149/
 ```
 
 统计指标：成功率、任务耗时、推理延迟、掉落率和碰撞率。对比实验默认不录制视频。
+
+### 6. 重力补偿精度对比
+
+```bash
+python scripts/compare_gravity_compensation.py \
+  --seed 42 \
+  --output-dir outputs/evaluation/gravity_compensation
+```
+
+两个控制器从完全相同的状态出发，以 25 Hz 执行 8 段平滑位置轨迹，
+保持初始末端姿态。每段移动 2 秒、保持 2 秒，最后 0.4 秒统计稳态误差。
+默认收敛阈值为位置 5 mm、姿态 0.03 rad，整个稳态窗口满足阈值才算收敛。
+
+```text
+outputs/evaluation/gravity_compensation/
+├── summary.json            # 聚合精度与 with - without 差值
+├── waypoints.csv           # 每个目标的收敛和稳态误差
+├── trajectory.csv          # 每周期目标/实际位姿、关节命令与补偿量
+├── with_gravity/metrics.json
+└── without_gravity/metrics.json
+```
+
+统计位置 RMSE、最大误差、稳态误差、姿态 RMSE、关节跟踪 RMSE 和收敛率。
+`qfrc_bias` 包含重力及速度相关偏置；该实验比较现有控制器的补偿开关，
+不是纯重力力矩控制。关节跟踪误差以执行器命令为参考，补偿命令本身包含偏置。
+时间参数须为 0.04 秒的整数倍；重复运行同一输出目录会覆盖已有结果。
