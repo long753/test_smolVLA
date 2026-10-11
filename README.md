@@ -191,15 +191,16 @@ outputs/evaluation/smolvla_base_vs_finetuned_seeds_100_149/
 
 ### 6. 重力补偿精度对比
 
+两个控制器从完全相同的状态出发，以 25 Hz 执行 8 段平滑位置轨迹，
+保持初始末端姿态。每段移动 2 秒、保持 2 秒，最后 0.4 秒统计稳态误差。
+默认收敛阈值为位置 5 mm、姿态 0.03 rad，整个稳态窗口满足阈值才算收敛。
+
 ```bash
 python scripts/compare_gravity_compensation.py \
   --seed 42 \
   --output-dir outputs/evaluation/gravity_compensation
 ```
-
-两个控制器从完全相同的状态出发，以 25 Hz 执行 8 段平滑位置轨迹，
-保持初始末端姿态。每段移动 2 秒、保持 2 秒，最后 0.4 秒统计稳态误差。
-默认收敛阈值为位置 5 mm、姿态 0.03 rad，整个稳态窗口满足阈值才算收敛。
+输出：
 
 ```text
 outputs/evaluation/gravity_compensation/
@@ -210,7 +211,4 @@ outputs/evaluation/gravity_compensation/
 └── without_gravity/metrics.json
 ```
 
-统计位置 RMSE、最大误差、稳态误差、姿态 RMSE、关节跟踪 RMSE 和收敛率。
-`qfrc_bias` 包含重力及速度相关偏置；该实验比较现有控制器的补偿开关，
-不是纯重力力矩控制。关节跟踪误差以执行器命令为参考，补偿命令本身包含偏置。
-时间参数须为 0.04 秒的整数倍；重复运行同一输出目录会覆盖已有结果。
+统计指标：位置 RMSE、最大误差、稳态误差、姿态 RMSE、关节跟踪 RMSE 和收敛率。
